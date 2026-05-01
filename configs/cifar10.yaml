@@ -1,0 +1,27 @@
+dataset: cifar10
+num_clients: 20
+clients_per_round: 10
+num_rounds: 200
+local_epochs: 1
+batch_size: 64
+lr: 0.01
+momentum: 0.9
+weight_decay: 5e-4
+img_size: 32
+in_channels: 3
+num_classes: 10
+dirichlet_alpha: 0.5
+
+distillation:
+  ipc: 10
+  outer_steps: 10
+  inner_steps: 1000
+  lr_img: 0.1
+  lr_net: 0.01
+
+unlearning:
+  finetune_epochs: 5
+  finetune_lr: 0.001
+
+eval:
+  mia_shadow_models: 4

@@ -1,0 +1,104 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=0.9in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{tabularx}
+\usepackage{hyperref}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue!55!black,
+  citecolor=black
+}
+
+% Tighter, smaller section headings
+\titleformat{\section}
+  {\normalfont\large\bfseries}{\thesection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.0\baselineskip}{0.3\baselineskip}
+
+\setlist{nosep, leftmargin=1.4em, itemsep=2pt, topsep=2pt}
+
+% Custom compact title block — replaces \maketitle
+\newcommand{\proposaltitle}{%
+  \begin{center}
+    {\LARGE\bfseries Project Proposal: QuickDrop}\\[2pt]
+    {\large Efficient Federated Unlearning via Synthetic Data Generation}\\[8pt]
+    \begin{tabular}{c@{\hspace{2.5em}}c}
+      Fardeen Farhat & Mohammad Ahmed Khan Noorzai \\
+      \small 22I-0638 & \small 22I-0469 \\
+    \end{tabular}\\[4pt]
+    {\small Course: Responsible \& Explainable AI \quad\textbar\quad Semester 8 \quad\textbar\quad May 2026}
+  \end{center}
+  \vspace{4pt}
+  \hrule
+  \vspace{8pt}
+}
+
+\begin{document}
+\proposaltitle
+
+\section*{Selected research paper}
+
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+  \textbf{Title}    & QuickDrop: Efficient Federated Unlearning via Synthetic Data Generation \\
+  \textbf{Authors}  & A.\,B.\ Dhasade, Y.\ Ding, S.\ Guo, A.-M.\ Kermarrec, M.\ de Vos, L.\ Wu \\
+  \textbf{Venue}    & 25th ACM/IFIP International Middleware Conference (Middleware '24), 2024 \\
+  \textbf{DOI}      & \href{https://doi.org/10.1145/3652892.3700764}{10.1145/3652892.3700764} \\
+\end{tabularx}
+
+\section*{Domain}
+
+Machine Unlearning, specifically federated unlearning.
+
+\section*{Problem statement and motivation}
+
+Federated learning lets devices train a shared model without sending raw data to a central server. That works well until a user wants out. GDPR and similar laws now give people a right to have their data removed from systems built on it. Removing a row from a database is easy. Removing what a model already learned from that row is not.
+
+The textbook answer is to retrain from scratch on whatever data is left. For federated learning that answer falls apart in practice. Devices drop in and out, bandwidth is tight, and asking every client to ship their data again undercuts the privacy story that justified the federation in the first place. So we need a way to undo a single client's contribution without restarting the world.
+
+QuickDrop tries to do exactly that. Each client distills its local data into a small synthetic dataset, and unlearning happens on those distilled sets at the server. The original client never has to be contacted again. We chose this paper because the framework is concrete enough to implement in a semester, the datasets are small enough to run on a laptop, and the evaluation is straightforward to defend.
+
+\section*{Overview of the methodology}
+
+The system has three pieces. The first is dataset distillation, run by each client. Each client produces a small synthetic dataset such that a model trained on the synthetic data behaves close to a model trained on the real data. The standard recipe is gradient matching or trajectory matching from the dataset distillation literature.
+
+The second is a federated aggregation step that uses the synthetic shards instead of repeated rounds over raw data. The server collects each client's distilled set and trains the global model on the union of shards.
+
+The third is the unlearning routine. When a client requests removal, the server drops that client's shard and runs a short finetune on what is left. Because the shards are tiny, this is much cheaper than retraining the federation from scratch. The trick is that the synthetic shard carries enough signal for the model to learn from without literally containing the original samples, so deleting a shard becomes a clean operation.
+
+\section*{Implementation plan}
+
+\textbf{Tools.} PyTorch for models and training. NumPy and scikit-learn for evaluation. We are writing our own FedAvg loop rather than using Flower or FedML. The reason is debug clarity: we want to read every line of the federated round, not chase what a framework is doing underneath. Logging starts as plain CSV. We will move to Weights and Biases only if the experiment count grows past what CSV can comfortably handle.
+
+\textbf{Datasets.} FEMNIST already has a per-writer split that fits federated learning naturally. For CIFAR-10 we will use a Dirichlet partition at $\alpha = 0.5$ to simulate a non-IID client mix. Both fit on a laptop or Google Colab.
+
+\textbf{Approach.} We are building in three stages. Stage one is a vanilla FedAvg baseline so that any unlearning numbers later have something to compare against. Stage two is the dataset distillation module on its own, tested in a single-device setup before plugging it into the federated loop. Stage three is the unlearning routine on top of stages one and two. We will not move on until the previous stage works end to end on FEMNIST.
+
+\textbf{Evaluation.} Four numbers:
+\begin{itemize}
+    \item Forget accuracy on the deleted client's data, which we want to fall.
+    \item Retain accuracy on the remaining clients, which we want to stay close to its pre-unlearning level.
+    \item Wall-clock time of unlearning compared with retraining from scratch, which is the efficiency claim of the paper.
+    \item A shadow-model membership inference attack to check whether the deleted data is actually gone or just hidden behind a shifted decision boundary.
+\end{itemize}
+
+\section*{Expected proof of concept}
+
+By the end of the semester we plan to deliver:
+\begin{itemize}
+    \item A FedAvg simulator with 10 to 20 clients running on FEMNIST and CIFAR-10.
+    \item The full QuickDrop pipeline: train, request deletion, unlearn, verify.
+    \item A demo notebook that walks a reader through the lifecycle on FEMNIST.
+    \item An evaluation report covering the four metrics on both datasets, plus an ablation on the size of the synthetic dataset to show how that knob trades speed for accuracy.
+    \item A short discussion of failure cases. We expect rare-class clients and clients with atypical data to be harder to forget cleanly, and we would rather report that than hide it.
+\end{itemize}
+
+This is a reproduction project, not a new method. Success means reproducing the paper's headline claim on at least one of the two datasets: unlearning that is meaningfully faster than retraining from scratch, with retain accuracy holding within a small margin of the baseline.
+
+\end{document}
