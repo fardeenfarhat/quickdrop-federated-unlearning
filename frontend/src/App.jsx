@@ -15,6 +15,7 @@ const TABS = [
 
 const EMPTY_TRAIN   = { status: "idle", current_round: 0, total_rounds: 0, history: [], message: "", dataset: "cifar10", num_clients: 10 };
 const EMPTY_UNLEARN = { status: "idle", message: "", results: null };
+const TRAIN_CFG_DEFAULT = { dataset: "cifar10", num_rounds: 20, num_clients: 10, clients_per_round: 5, local_epochs: 1, lr: 0.01 };
 const RUN_ID = Math.floor(Math.random() * 0xffff).toString(16).padStart(4, "0");
 
 export default function App() {
@@ -22,6 +23,8 @@ export default function App() {
   const [trainState, setTrainState]     = useState(EMPTY_TRAIN);
   const [unlearnState, setUnlearnState] = useState(EMPTY_UNLEARN);
   const [unlearnPhase, setUnlearnPhase] = useState(0);
+  // Persisted across tab switches so the config form doesn't reset
+  const [trainCfg, setTrainCfg]         = useState(TRAIN_CFG_DEFAULT);
 
   useEffect(() => {
     let phaseInterval = null;
@@ -143,7 +146,7 @@ export default function App() {
       <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
         <Topbar trainState={trainState} />
         <main style={{ padding: "32px 40px", flex: 1 }}>
-          {tab === "Train"   && <TrainPanel   trainState={trainState}   setTrainState={setTrainState} />}
+          {tab === "Train"   && <TrainPanel   trainState={trainState}   setTrainState={setTrainState} trainCfg={trainCfg} setTrainCfg={setTrainCfg} />}
           {tab === "Clients" && <ClientsPanel />}
           {tab === "Unlearn" && <UnlearnPanel unlearnState={unlearnState} unlearnPhase={unlearnPhase} />}
           {tab === "Metrics" && <MetricsPanel trainState={trainState}   unlearnState={unlearnState} />}

@@ -1,15 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { startTraining, resetState } from "../api";
 import { Button, Card, Field, Input, Select, Mini, EmptyChart, ProgressBar, PageHeader, StatusDot } from "../ui";
 import { LineChart } from "../charts";
 
-const DEFAULTS = {
-  dataset: "cifar10", num_rounds: 20, num_clients: 10,
-  clients_per_round: 5, local_epochs: 1, lr: 0.01,
-};
-
-export default function TrainPanel({ trainState, setTrainState }) {
-  const [cfg, setCfg] = useState(DEFAULTS);
+export default function TrainPanel({ trainState, setTrainState, trainCfg: cfg, setTrainCfg: setCfg }) {
   const pollRef = useRef(null);
 
   // Stop fine-grained poll when training finishes
@@ -36,7 +30,7 @@ export default function TrainPanel({ trainState, setTrainState }) {
   const handleReset = async () => {
     try {
       await resetState();
-      setTrainState({ status: "idle", current_round: 0, total_rounds: 0, history: [], message: "", dataset: cfg.dataset, num_clients: cfg.num_clients });
+      setTrainState({ status: "idle", current_round: 0, total_rounds: 0, history: [], message: "" });
     } catch (_) {}
   };
 
@@ -86,11 +80,14 @@ export default function TrainPanel({ trainState, setTrainState }) {
         {/* Live status */}
         <Card
           title="Live progress"
-          subtitle={trainState.message || "Idle — configure and start a run"}
+          subtitle={
+            trainState.message ||
+            (trainState.status === "training" ? "Round in progress — CPU training can take several minutes per round" : "Idle — configure and start a run")
+          }
           action={<StatusDot status={trainState.status} />}
         >
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 18 }}>
-            <Mini label="Round"          value={`${trainState.current_round || 0}/${trainState.total_rounds || cfg.num_rounds}`} />
+            <Mini label="Round"          value={`${trainState.current_round || 0}/${trainState.total_rounds || cfg.num_rounds || "?"}`} />
             <Mini label="Test acc"       value={latest ? `${(latest.test_acc * 100).toFixed(1)}%` : "—"} accent={latest ? "var(--mint)" : undefined} />
             <Mini label="Train loss"     value={latest ? latest.train_loss?.toFixed(3) ?? "—" : "—"} />
             <Mini label="Active clients" value={isRunning ? cfg.clients_per_round : 0} />
