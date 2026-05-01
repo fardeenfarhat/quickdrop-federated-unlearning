@@ -131,9 +131,10 @@ def _unlearn_job(req: UnlearnRequest):
         if req.run_retrain_baseline:
             in_ch = 3 if state.dataset == "cifar10" else 1
             n_cls = 10 if state.dataset == "cifar10" else 62
+            img_size = 28 if state.dataset == "femnist" else 32
 
             def model_factory():
-                return build_model(in_ch, n_cls, device)
+                return build_model(in_ch, n_cls, device, img_size=img_size)
 
             _, retrain_time = retrain_from_scratch(
                 model_factory, state.shards, req.client_id,

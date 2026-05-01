@@ -57,17 +57,26 @@ def _training_job(req: TrainRequest):
         state.test_loader = test_loader
         state.num_clients = req.num_clients
 
-        global_model = build_model(in_ch, n_cls, device)
+        img_size = 28 if req.dataset == "femnist" else 32
+        global_model = build_model(in_ch, n_cls, device, img_size=img_size)
         server = FederatedServer(global_model, device)
         clients = [FederatedClient(i, loader, device) for i, loader in enumerate(client_loaders)]
 
         def on_round_end(record):
             state.current_round = record["round"]
             state.training_history.append(record)
-            state.message = f"Round {record['round']}/{req.num_rounds} — acc: {record['test_acc']:.3f}"
+            state.message = (f"Round {record['round']}/{req.num_rounds} complete "
+                             f"— acc {record['test_acc']:.3f}  loss {record['train_loss']:.4f}")
+
+        def on_client_done(info):
+            state.message = (f"Round {info['round']}/{req.num_rounds} "
+                             f"— C{info['client_id']:02d} done "
+                             f"({info['done']}/{info['total']} clients)  "
+                             f"loss {info['train_loss']:.4f}")
 
         run_fedavg(server, clients, req.num_rounds, req.clients_per_round,
-                   req.local_epochs, req.lr, test_loader, on_round_end=on_round_end)
+                   req.local_epochs, req.lr, test_loader,
+                   on_round_end=on_round_end, on_client_done=on_client_done)
 
         state.global_model = server.get_model()
         state.status = "ready"

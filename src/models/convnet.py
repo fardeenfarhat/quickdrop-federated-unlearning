@@ -46,9 +46,9 @@ class ConvNet(nn.Module):
             offset += n
 
 
-def build_model(in_channels: int, num_classes: int, device: torch.device) -> ConvNet:
+def build_model(in_channels: int, num_classes: int, device: torch.device, img_size: int = 32) -> ConvNet:
     model = ConvNet(in_channels, num_classes).to(device)
-    dummy = torch.zeros(2, in_channels, 32, 32).to(device)
+    dummy = torch.zeros(2, in_channels, img_size, img_size).to(device)
     model(dummy)  # trigger LazyLinear init
     return model
 
