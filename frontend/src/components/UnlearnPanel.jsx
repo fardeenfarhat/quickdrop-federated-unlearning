@@ -25,7 +25,7 @@ export default function UnlearnPanel({ unlearnState, unlearnPhase }) {
   };
 
   const busy        = unlearnState.status === "distilling" || unlearnState.status === "unlearning";
-  const distillDone = !!unlearnState.results || unlearnState.status === "unlearning";
+  const distillDone = !!unlearnState.results || unlearnState.status === "unlearning" || !!unlearnState.shards_ready;
   const complete    = !!unlearnState.results;
 
   return (

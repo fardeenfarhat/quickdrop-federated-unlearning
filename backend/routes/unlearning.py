@@ -167,4 +167,5 @@ def unlearn_status():
         "status": state.status,
         "message": state.message,
         "results": state.unlearn_results,
+        "shards_ready": len(state.shards) > 0,
     }

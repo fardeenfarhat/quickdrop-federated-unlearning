@@ -31,13 +31,13 @@ def get_samples(client_id: int, n: int = 16):
     if client_id >= len(state.client_loaders):
         raise HTTPException(404, "Client not found.")
 
-    loader = state.client_loaders[client_id]
-    images, labels = next(iter(loader))
-    images = images[:n]
-    labels = labels[:n].tolist()
-
+    dataset = state.client_loaders[client_id].dataset
+    indices = list(range(min(n, len(dataset))))
     encoded = []
-    for img in images:
+    labels  = []
+    for i in indices:
+        img, label = dataset[i]
+        labels.append(int(label))
         arr = img.permute(1, 2, 0).numpy()
         arr = ((arr - arr.min()) / (arr.max() - arr.min() + 1e-8) * 255).astype(np.uint8)
         if arr.shape[2] == 1:
@@ -57,7 +57,10 @@ def get_client_accuracy(client_id: int):
     if client_id >= len(state.client_loaders):
         raise HTTPException(404, "Client not found.")
 
+    dataset = state.client_loaders[client_id].dataset
+    batch_size = state.client_loaders[client_id].batch_size or 64
+    # fresh DataLoader with no worker processes — safe to use from any thread
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=0, shuffle=False)
     device = next(state.global_model.parameters()).device
-    loader = state.client_loaders[client_id]
     result = evaluate(state.global_model, loader, device)
     return result

@@ -14,7 +14,7 @@ const TABS = [
 ];
 
 const EMPTY_TRAIN   = { status: "idle", current_round: 0, total_rounds: 0, history: [], message: "", dataset: "cifar10", num_clients: 10 };
-const EMPTY_UNLEARN = { status: "idle", message: "", results: null };
+const EMPTY_UNLEARN = { status: "idle", message: "", results: null, shards_ready: false };
 const TRAIN_CFG_DEFAULT = { dataset: "cifar10", num_rounds: 20, num_clients: 10, clients_per_round: 5, local_epochs: 1, lr: 0.01 };
 const RUN_ID = Math.floor(Math.random() * 0xffff).toString(16).padStart(4, "0");
 
@@ -64,7 +64,7 @@ export default function App() {
   }, []);
 
   const hasResults       = !!unlearnState.results;
-  const distillDone      = hasResults || unlearnState.status === "unlearning";
+  const distillDone      = hasResults || unlearnState.status === "unlearning" || !!unlearnState.shards_ready;
   const sidebarDistill   = unlearnState.status === "distilling" ? "distilling" : distillDone ? "ready" : "idle";
   const sidebarForget    = unlearnState.status === "unlearning" ? "unlearning" : hasResults ? "ready" : "idle";
 
