@@ -45,7 +45,8 @@ You need two terminals.
 ```bash
 # Terminal 1 — backend API
 source venv/bin/activate          # Windows: venv\Scripts\activate
-uvicorn backend.main:app --reload --port 8000
+PYTHONPATH=. uvicorn backend.main:app --reload --port 8000
+# Windows CMD: set PYTHONPATH=. && uvicorn backend.main:app --reload --port 8000
 
 # Terminal 2 — frontend
 cd frontend

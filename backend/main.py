@@ -1,3 +1,9 @@
+import sys
+import os
+# Ensure the project root is on sys.path so `src` is importable from anywhere,
+# including uvicorn's --reload subprocess.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

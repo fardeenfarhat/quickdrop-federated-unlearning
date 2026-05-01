@@ -11,7 +11,7 @@ fi
 source venv/bin/activate
 
 echo "==> Starting backend on http://localhost:8000 ..."
-uvicorn backend.main:app --reload --port 8000 &
+PYTHONPATH=. uvicorn backend.main:app --reload --port 8000 &
 BACKEND_PID=$!
 
 echo "==> Starting frontend on http://localhost:5173 ..."

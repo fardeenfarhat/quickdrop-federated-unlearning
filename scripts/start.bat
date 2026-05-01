@@ -7,7 +7,7 @@ if not exist venv (
 )
 
 echo =^> Starting backend on http://localhost:8000 ...
-start "QuickDrop Backend" cmd /k "venv\Scripts\activate && uvicorn backend.main:app --reload --port 8000"
+start "QuickDrop Backend" cmd /k "venv\Scripts\activate && set PYTHONPATH=. && uvicorn backend.main:app --reload --port 8000"
 
 echo =^> Starting frontend on http://localhost:5173 ...
 start "QuickDrop Frontend" cmd /k "cd frontend && npm run dev"
